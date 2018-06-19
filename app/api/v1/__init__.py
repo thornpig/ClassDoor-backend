@@ -1,5 +1,6 @@
 from flask import Blueprint
-from flask_restful import Api
 
-bp = Blueprint('api', __name__)
-api = Api(bp)
+bp = Blueprint('api', __name__, url_prefix='/api/v1')
+
+from . import user
+from . import post
