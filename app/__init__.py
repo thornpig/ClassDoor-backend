@@ -1,11 +1,10 @@
 from flask import Flask
-from config import Config
+from .config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from .models.base import BaseModel
 
 
-db = SQLAlchemy(model_class=BaseModel)
+db = SQLAlchemy()
 migrate = Migrate()
 
 
@@ -13,7 +12,7 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     configure_extensions(app)
-    register_blueprints(app)
+    #  register_blueprints(app)
     return app
 
 
@@ -29,4 +28,5 @@ def register_blueprints(app):
     app.register_blueprint(bp_api)
 
 
-from .models import post, user
+from .models import (address, person, user, dependent, enrollment, class_,
+                     class_session, schedule)
