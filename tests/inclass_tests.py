@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import sys
 import inspect
+import json
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(
     inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -11,12 +12,18 @@ sys.path.insert(0, parentdir)
 from app import create_app, db
 from app.config import TestConfig
 from app.models import (
-    RepeatOptions, TimeSlot, RepeatTimeSlot, Schedule,
-    Lesson, TemplateLesson, Class, ClassSession,
+    RepeatOptions, TimeSlot, Schedule,
+    Lesson, TemplateLesson, Class, ClassSession, RepeatedLesson,
     Person, User, Dependent, Enrollment,
     Organization, OrganizationPersonAssociation,
     Notification, NotificationDelivery, Address
 )
+
+
+def print_json(json_data):
+    print(json.dumps(json.loads(json_data), sort_keys=True,
+                     indent=4, separators=(',', ': ')))
+
 
 
 class AppTestCase(unittest.TestCase):
@@ -133,6 +140,47 @@ class AppTestCase(unittest.TestCase):
             for ts in schedule.repeat_time_slots:
                 print(ts.start_at)
 
+    def test_person(self):
+        with self.app.app_context():
+
+            p0 = Person(first_name='zack', last_name='zhu')
+            d0 = Dependent(first_name='adela', last_name='zhu')
+
+            u0 = User(username='thornpig', email='zack@gmail.com',
+                      first_name='zack', last_name='zhu')
+            u0.dependents.append(d0)
+            db.session.add(u0)
+            db.session.commit()
+
+    def test_organization(self):
+        with self.app.app_context():
+            p0 = Person(first_name='zack', last_name='zhu')
+            d0 = Dependent(first_name='adela', last_name='zhu')
+
+            u0 = User(username='thornpig', email='zack@gmail.com',
+                      first_name='zack', last_name='zhu')
+            u0.dependents.append(d0)
+            # db.session.add(u0)
+            # db.session.commit()
+
+            org0 = Organization(name='Iceland', creator=u0)
+            op0 = OrganizationPersonAssociation(
+                organization=org0, associated_person=p0)
+            op1 = OrganizationPersonAssociation(
+                organization=org0, associated_person=u0)
+            org0.organization_associations.append(op0)
+            org0.organization_associations.append(op1)
+            db.session.add(org0)
+            db.session.commit()
+            print(org0.organization_associations[0].associated_person)
+            print(org0.organization_associations[1].associated_person)
+            print(u0.organization_associations[0].organization)
+            print(p0.organization_associations[0].organization)
+
+
+
+
+
     def test_class(self):
         with self.app.app_context():
             u0 = User(username='thornpig', email='zack@gmail.com',
@@ -152,27 +200,24 @@ class AppTestCase(unittest.TestCase):
             sch0 = Schedule(repeat_option=RepeatOptions.WEEKLY,
                             repeat_end_at=end_at,
                             base_time_slots=[ts0, ts1])
-            sch0.repeat_time_slots = sch0.get_repeat_time_slots()
             cs0.schedule = sch0
             self.db.session.add(cs0)
             self.db.session.commit()
 
-            print(cs0.schedule.repeat_time_slots)
-
             tl0 = TemplateLesson(class_session_id=cs0.id,
-                                 repeat_time_slot=RepeatTimeSlot(
-                                     base_time_slot=ts0,
-                                     repeat_option=sch0.repeat_option,
-                                     repeat_num=0)
+                                 time_slot=ts0
                                  )
             tl1 = TemplateLesson(class_session_id=cs0.id,
-                                 repeat_time_slot=RepeatTimeSlot(
-                                     base_time_slot=ts1,
-                                     repeat_option=sch0.repeat_option,
-                                     repeat_num=0)
+                                 time_slot=ts1
                                  )
             cs0.template_lessons = [tl0, tl1]
-            [cs0.lessons.append(l) for l in cs0.create_lessons()]
+            lessons = cs0.create_lessons()
+            # db.session.add_all(lessons)
+            # db.session.commit()
+            l0 = Lesson(class_session=cs0)
+
+            [cs0.lessons.append(l) for l in lessons]
+            cs0.lessons.append(l0)
             print(cs0.lessons.all())
             self.db.session.add(cs0)
             self.db.session.commit()
@@ -180,10 +225,23 @@ class AppTestCase(unittest.TestCase):
             print(cs0.lessons.all())
 
 
+    def test_api_user(self):
+        with self.app.app_context():
+            d0 = Dependent(first_name='adela', last_name='zhu')
 
+            u0 = User(username='thornpig', email='zack@gmail.com',
+                      first_name='zack', last_name='zhu')
+            u0.dependents.append(d0)
+            self.db.session.add(u0)
+            self.db.session.commit()
 
+            u1 = User(username='Adela', email='adela@gmail.com',
+                      first_name='adela', last_name='zhu')
+            self.db.session.add(u1)
+            self.db.session.commit()
 
-
+        rp = self.test_client.get('/api/v1/users/5')
+        print_json(rp.data)
 
 
 if __name__ == '__main__':
