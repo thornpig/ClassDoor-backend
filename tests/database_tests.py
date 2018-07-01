@@ -1,14 +1,7 @@
 import unittest
 from datetime import datetime
-import os
-import sys
-import inspect
 import json
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(
-    inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
+from app_test import APPTestCase
 from app import create_app, db
 from app.config import TestConfig
 from app.models import (
@@ -16,28 +9,11 @@ from app.models import (
     Lesson, TemplateLesson, Class, ClassSession, RepeatedLesson,
     Person, User, Dependent, Enrollment,
     Organization, OrganizationPersonAssociation,
-    Notification, NotificationDelivery, Address
+    Notification, NotificationDelivery, Address,
 )
 
 
-def print_json(json_data):
-    print(json.dumps(json.loads(json_data), sort_keys=True,
-                     indent=4, separators=(',', ': ')))
-
-
-
-class AppTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.app = create_app(config_class=TestConfig)
-        self.app.testing = True
-        self.test_client = self.app.test_client()
-        self.db = db
-        with self.app.app_context():
-            self.db.create_all()
-
-    def tearDown(self):
-        self.db.session.remove()
+class DBTestCase(APPTestCase):
 
     def test_repeat_option(self):
         dt = datetime(2018, 12, 31, 23, 59, 59)
@@ -176,6 +152,7 @@ class AppTestCase(unittest.TestCase):
             print(org0.organization_associations[1].associated_person)
             print(u0.organization_associations[0].organization)
             print(p0.organization_associations[0].organization)
+            print(org0.organization_associations[:])
 
 
 
@@ -186,12 +163,15 @@ class AppTestCase(unittest.TestCase):
             u0 = User(username='thornpig', email='zack@gmail.com',
                       first_name='zack', last_name='zhu')
             c0 = Class(title='swimming class')
+            c1 = Class(title='soccer class')
             u0.created_classes.append(c0)
+            u0.created_classes.append(c1)
             db.session.add(u0)
             db.session.commit()
             assert c0.creator == u0
 
             cs0 = ClassSession(class_id=c0.id, creator_id=u0.id)
+
             ts0 = TimeSlot(start_at=datetime(2018, 2, 27, 11, 59, 59),
                            duration=30)
             ts1 = TimeSlot(start_at=datetime(2018, 2, 28, 11, 59, 59),
@@ -216,32 +196,83 @@ class AppTestCase(unittest.TestCase):
             # db.session.commit()
             l0 = Lesson(class_session=cs0)
 
-            [cs0.lessons.append(l) for l in lessons]
-            cs0.lessons.append(l0)
-            print(cs0.lessons.all())
+            # [cs0.lessons.append(l) for l in lessons]
+            # cs0.lessons.append(l0)
+            cs0.lessons = lessons + [l0]
             self.db.session.add(cs0)
             self.db.session.commit()
+            print(cs0.template_lessons[:])
+            print(cs0.lessons[:])
 
-            print(cs0.lessons.all())
+
+            cs1 = ClassSession(class_id=c1.id, creator_id=u0.id)
+            ts2 = TimeSlot(start_at=datetime(2018, 12, 27, 11, 59, 59),
+                           duration=30)
+            ts3 = TimeSlot(start_at=datetime(2018, 12, 28, 11, 59, 59),
+                           duration=60)
+            end_at = datetime(2019, 1, 20, 9, 59, 59)
+            sch1 = Schedule(repeat_option=RepeatOptions.WEEKLY,
+                            repeat_end_at=end_at,
+                            base_time_slots=[ts2, ts3])
+            cs1.schedule = sch1
+            tl2 = TemplateLesson(class_session_id=cs1.id,
+                                 time_slot=ts2
+                                 )
+            tl3 = TemplateLesson(class_session_id=cs1.id,
+                                 time_slot=ts3
+                                 )
+            cs1.template_lessons = [tl2, tl3]
+            lessons = cs1.create_lessons()
+            self.db.session.add(cs1)
+            self.db.session.commit()
+            print(cs1.template_lessons[:])
+            print(cs1.lessons[:])
 
 
-    def test_api_user(self):
+
+
+    def test_enrollment(self):
+        self.test_class()
         with self.app.app_context():
+            cs0 = db.session.query(ClassSession).first()
+            cs1 = db.session.query(ClassSession)[1]
+
             d0 = Dependent(first_name='adela', last_name='zhu')
-
-            u0 = User(username='thornpig', email='zack@gmail.com',
-                      first_name='zack', last_name='zhu')
+            u0 = User(username='xzheng', email='xzheng@gmail.com',
+                      first_name='xue', last_name='zheng')
             u0.dependents.append(d0)
-            self.db.session.add(u0)
-            self.db.session.commit()
+            em0 = Enrollment(class_session=cs0,
+                             enrolled_person=d0, initiator=u0)
 
-            u1 = User(username='Adela', email='adela@gmail.com',
-                      first_name='adela', last_name='zhu')
-            self.db.session.add(u1)
-            self.db.session.commit()
+            d1 = Dependent(first_name='dudu', last_name='zhu')
+            u1 = User(username='john', email='john@gmail.com',
+                      first_name='john', last_name='lu')
+            u1.dependents.append(d1)
+            em1 = Enrollment(class_session=cs0,
+                             enrolled_person=d1, initiator=u1)
+            em2 = Enrollment(class_session=cs1,
+                             enrolled_person=d1, initiator=u1)
 
-        rp = self.test_client.get('/api/v1/users/5')
-        print_json(rp.data)
+            db.session.add_all([em0, em1, em2])
+            db.session.commit()
+
+            ems = Enrollment.get_enrollments(cs0.id)
+            print(ems)
+
+            ems = Enrollment.get_enrollments(enrolled_person_id=d0.id)
+            print(ems)
+
+            ems = Enrollment.get_enrollments(enrolled_person_id=d1.id)
+            print(ems)
+
+            ems = Enrollment.get_enrollments(initiator_id=u1.id)
+            print(ems)
+
+            ems = Enrollment.get_enrollments(cs1.id, d1.id)
+            print(ems)
+
+
+
 
 
 if __name__ == '__main__':
