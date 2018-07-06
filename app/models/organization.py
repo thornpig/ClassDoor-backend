@@ -1,32 +1,31 @@
+# import sqlalchemy as sa
 from datetime import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import db, Model, SurrogatePK, TimestampMixin
 
 
-class OrganizationPersonAssociation(TimestampMixin, Model):
+class OrganizationPersonAssociation(SurrogatePK, TimestampMixin, Model):
     __tablename__ = 'organization_person_association'
     organization_id = db.Column(
         db.Integer,
         db.ForeignKey('organization.id'),
-        primary_key=True
     )
     associated_person_id = db.Column(
         db.Integer,
         db.ForeignKey('person.id'),
-        primary_key=True
     )
     terminated = db.Column(db.Boolean, nullable=False, default=False)
     initiator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     organization = db.relationship(
         'Organization',
-        back_populates='organization_associations',
+        back_populates='organization_person_associations',
         lazy='subquery'
     )
 
     associated_person = db.relationship(
         'Person',
-        back_populates='organization_assocations',
+        back_populates='organization_person_associations',
         lazy='subquery'
     )
 
@@ -37,7 +36,7 @@ class Organization(SurrogatePK, TimestampMixin, Model):
     name = db.Column(db.String(100), nullable=None)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=None)
 
-    organization_associations = db.relationship(
+    organization_person_associations = db.relationship(
         'OrganizationPersonAssociation',
         foreign_keys='[OrganizationPersonAssociation.organization_id]',
         #  cascade="all, delete-orphan",

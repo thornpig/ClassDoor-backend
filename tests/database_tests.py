@@ -5,7 +5,7 @@ from app_test import APPTestCase
 from app import create_app, db
 from app.config import TestConfig
 from app.models import (
-    RepeatOptions, TimeSlot, Schedule,
+    RepeatOption, TimeSlot, Schedule,
     Lesson, TemplateLesson, Class, ClassSession, RepeatedLesson,
     Person, User, Dependent, Enrollment,
     Organization, OrganizationPersonAssociation,
@@ -17,51 +17,51 @@ class DBTestCase(APPTestCase):
 
     def test_repeat_option(self):
         dt = datetime(2018, 12, 31, 23, 59, 59)
-        rep_dt = RepeatOptions.DAILY.get_repeat_datetime(dt, 1)
+        rep_dt = RepeatOption.DAILY.get_repeat_datetime(dt, 1)
         assert rep_dt == datetime(2019, 1, 1, 23, 59, 59)
 
         dt = datetime(2018, 2, 28, 23, 59, 59)
-        rep_dt = RepeatOptions.DAILY.get_repeat_datetime(dt, 1)
+        rep_dt = RepeatOption.DAILY.get_repeat_datetime(dt, 1)
         assert rep_dt == datetime(2018, 3, 1, 23, 59, 59)
 
         dt = datetime(2018, 2, 25, 23, 59, 59)
-        rep_dt = RepeatOptions.DAILY.get_repeat_datetime(dt, 4)
+        rep_dt = RepeatOption.DAILY.get_repeat_datetime(dt, 4)
         assert rep_dt == datetime(2018, 3, 1, 23, 59, 59)
 
         dt = datetime(2018, 11, 30, 23, 59, 59)
-        rep_dt = RepeatOptions.MONTHLY.get_repeat_datetime(dt, 1)
+        rep_dt = RepeatOption.MONTHLY.get_repeat_datetime(dt, 1)
         assert rep_dt == datetime(2018, 12, 30, 23, 59, 59)
 
         dt = datetime(2018, 1, 30, 23, 59, 59)
-        rep_dt = RepeatOptions.MONTHLY.get_repeat_datetime(dt, 11)
+        rep_dt = RepeatOption.MONTHLY.get_repeat_datetime(dt, 11)
         assert rep_dt == datetime(2018, 12, 30, 23, 59, 59)
 
         dt = datetime(2018, 12, 31, 23, 59, 59)
-        rep_dt = RepeatOptions.MONTHLY.get_repeat_datetime(dt, 1)
+        rep_dt = RepeatOption.MONTHLY.get_repeat_datetime(dt, 1)
         assert rep_dt == datetime(2019, 1, 31, 23, 59, 59)
 
         dt = datetime(2018, 5, 31, 23, 59, 59)
-        rep_dt = RepeatOptions.MONTHLY.get_repeat_datetime(dt, 8)
+        rep_dt = RepeatOption.MONTHLY.get_repeat_datetime(dt, 8)
         assert rep_dt == datetime(2019, 1, 31, 23, 59, 59)
 
         dt = datetime(2018, 1, 31, 23, 59, 59)
-        rep_dt = RepeatOptions.MONTHLY.get_repeat_datetime(dt, 1)
+        rep_dt = RepeatOption.MONTHLY.get_repeat_datetime(dt, 1)
         assert rep_dt == datetime(2018, 2, 28, 23, 59, 59)
 
         dt = datetime(2017, 8, 31, 23, 59, 59)
-        rep_dt = RepeatOptions.MONTHLY.get_repeat_datetime(dt, 6)
+        rep_dt = RepeatOption.MONTHLY.get_repeat_datetime(dt, 6)
         assert rep_dt == datetime(2018, 2, 28, 23, 59, 59)
 
         dt = datetime(2016, 2, 29, 23, 59, 59)
-        rep_dt = RepeatOptions.YEARLY.get_repeat_datetime(dt, 1)
+        rep_dt = RepeatOption.YEARLY.get_repeat_datetime(dt, 1)
         assert rep_dt == datetime(2017, 2, 28, 23, 59, 59)
 
         dt = datetime(2016, 2, 29, 23, 59, 59)
-        rep_dt = RepeatOptions.YEARLY.get_repeat_datetime(dt, 3)
+        rep_dt = RepeatOption.YEARLY.get_repeat_datetime(dt, 3)
         assert rep_dt == datetime(2019, 2, 28, 23, 59, 59)
 
         dt = datetime(2000, 2, 29, 23, 59, 59)
-        rep_dt = RepeatOptions.YEARLY.get_repeat_datetime(dt, 4)
+        rep_dt = RepeatOption.YEARLY.get_repeat_datetime(dt, 4)
         assert rep_dt == datetime(2004, 2, 29, 23, 59, 59)
 
     def test_schedule(self):
@@ -71,23 +71,23 @@ class DBTestCase(APPTestCase):
             ts1 = TimeSlot(start_at=datetime(2018, 2, 28, 11, 59, 59),
                            duration=60)
             end_at = datetime(2018, 3, 14, 9, 59, 59)
-            schedule = Schedule(repeat_option=RepeatOptions.WEEKLY,
+            schedule = Schedule(repeat_option=RepeatOption.WEEKLY,
                                 repeat_end_at=end_at,
                                 base_time_slots=[ts1, ts0])
             self.db.session.add(schedule)
             self.db.session.commit()
 
-            expected_slots = [
-                RepeatTimeSlot(base_time_slot=ts0, repeat_num=0,
-                               repeat_option=RepeatOptions.WEEKLY),
+            EXPECTED_SLOTS = [
+                REPEATTIMESLOt(base_time_slot=ts0, repeat_num=0,
+                               repeat_option=RepeatOption.WEEKLY),
                 RepeatTimeSlot(base_time_slot=ts1, repeat_num=0,
-                               repeat_option=RepeatOptions.WEEKLY),
+                               repeat_option=RepeatOption.WEEKLY),
                 RepeatTimeSlot(base_time_slot=ts0, repeat_num=1,
-                               repeat_option=RepeatOptions.WEEKLY),
+                               repeat_option=RepeatOption.WEEKLY),
                 RepeatTimeSlot(base_time_slot=ts1, repeat_num=1,
-                               repeat_option=RepeatOptions.WEEKLY),
+                               repeat_option=RepeatOption.WEEKLY),
                 RepeatTimeSlot(base_time_slot=ts0, repeat_num=2,
-                               repeat_option=RepeatOptions.WEEKLY),
+                               repeat_option=RepeatOption.WEEKLY),
             ]
             # for rts in expected_slots:
             #     rts._start_at = rts.start_at
@@ -121,12 +121,18 @@ class DBTestCase(APPTestCase):
 
             p0 = Person(first_name='zack', last_name='zhu')
             d0 = Dependent(first_name='adela', last_name='zhu')
+            print(p0.type)
+            print(d0.type)
 
             u0 = User(username='thornpig', email='zack@gmail.com',
                       first_name='zack', last_name='zhu')
             u0.dependents.append(d0)
             db.session.add(u0)
             db.session.commit()
+            print(p0.type)
+            print(d0.type)
+
+
 
     def test_organization(self):
         with self.app.app_context():
@@ -157,7 +163,6 @@ class DBTestCase(APPTestCase):
 
 
 
-
     def test_class(self):
         with self.app.app_context():
             u0 = User(username='thornpig', email='zack@gmail.com',
@@ -177,7 +182,7 @@ class DBTestCase(APPTestCase):
             ts1 = TimeSlot(start_at=datetime(2018, 2, 28, 11, 59, 59),
                            duration=60)
             end_at = datetime(2018, 3, 14, 9, 59, 59)
-            sch0 = Schedule(repeat_option=RepeatOptions.WEEKLY,
+            sch0 = Schedule(repeat_option=RepeatOption.WEEKLY,
                             repeat_end_at=end_at,
                             base_time_slots=[ts0, ts1])
             cs0.schedule = sch0
@@ -195,6 +200,8 @@ class DBTestCase(APPTestCase):
             # db.session.add_all(lessons)
             # db.session.commit()
             l0 = Lesson(class_session=cs0)
+            print(l0.type)
+
 
             # [cs0.lessons.append(l) for l in lessons]
             # cs0.lessons.append(l0)
@@ -202,7 +209,8 @@ class DBTestCase(APPTestCase):
             self.db.session.add(cs0)
             self.db.session.commit()
             print(cs0.template_lessons[:])
-            print(cs0.lessons[:])
+            print(cs0.lessons[0].type)
+            exit()
 
 
             cs1 = ClassSession(class_id=c1.id, creator_id=u0.id)
@@ -211,7 +219,7 @@ class DBTestCase(APPTestCase):
             ts3 = TimeSlot(start_at=datetime(2018, 12, 28, 11, 59, 59),
                            duration=60)
             end_at = datetime(2019, 1, 20, 9, 59, 59)
-            sch1 = Schedule(repeat_option=RepeatOptions.WEEKLY,
+            sch1 = Schedule(repeat_option=RepeatOption.WEEKLY,
                             repeat_end_at=end_at,
                             base_time_slots=[ts2, ts3])
             cs1.schedule = sch1
@@ -227,6 +235,8 @@ class DBTestCase(APPTestCase):
             self.db.session.commit()
             print(cs1.template_lessons[:])
             print(cs1.lessons[:])
+
+            print(self.db.session.query(Lesson).all())
 
 
 

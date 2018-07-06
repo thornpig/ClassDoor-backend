@@ -7,11 +7,22 @@ class Address(SurrogatePK, Model):
     secondary_street = db.Column(db.String(100), default='')
     city = db.Column(db.String(30), nullable=False)
     state = db.Column(db.String(30), nullable=False)
-    zipcode = db.Column(db.Integer, nullable=False)
+    zipcode = db.Column(db.String(30), nullable=False)
     country = db.Column(db.String(30), nullable=False)
+    creator_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id')
+    )
+
+    creator = db.relationship(
+        'User',
+        backref='created_addresses',
+        lazy='subquery'
+    )
 
     def __repr__(self):
-        return '<Address {} {}, {}, {} {}, {}>'.format(
+        return '<{}: {} {}, {}, {} {}, {}>'.format(
+            super().__repr__(),
             self.primary_street, self.secondary_street,
             self.city, self.state, self.zipcode, self.country)
 

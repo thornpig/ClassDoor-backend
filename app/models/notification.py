@@ -3,17 +3,15 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from .database import db, Model, SurrogatePK, TimestampMixin
 
 
-class NotificationDelivery(TimestampMixin, Model):
+class NotificationDelivery(SurrogatePK, TimestampMixin, Model):
     __tablename__ = 'notification_person_delivery'
     notification_id = db.Column(
         db.Integer,
         db.ForeignKey('notification.id'),
-        primary_key=True
     )
     receiver_id = db.Column(
         db.Integer,
         db.ForeignKey('person.id'),
-        primary_key=True
     )
     delivered_at = db.Column(db.DateTime)
 
@@ -52,5 +50,8 @@ class Notification(SurrogatePK, TimestampMixin, Model):
     )
 
     def __repr__(self):
-        return '<Notification> sent by {} : {}'.format(
-            self.sender.full_name, self.content)
+        return '{} sent by {} : {}'.format(
+            super().__repr__(),
+            self.sender.full_name,
+            self.content
+        )

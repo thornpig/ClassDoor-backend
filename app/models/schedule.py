@@ -6,7 +6,7 @@ from sqlalchemy import event
 from .database import db, Model, SurrogatePK, TimestampMixin
 
 
-class RepeatOptions(enum.Enum):
+class RepeatOption(enum.Enum):
     NEVER = 1
     DAILY = 2
     WEEKLY = 3
@@ -14,6 +14,7 @@ class RepeatOptions(enum.Enum):
     MONTHLY = 5
     YEARLY = 6
     SPECIFIC = 7
+
 
     def get_repeat_datetime(self, dt=datetime.utcnow(), num=0):
         if self == self.NEVER:
@@ -75,8 +76,8 @@ class RepeatTimeSlot(SurrogatePK, Model):
     __tablename__ = 'repeat_time_slot'
     base_time_slot_id = db.Column(db.Integer, db.ForeignKey('time_slot.id'))
     repeat_option = db.Column(
-        db.Enum(RepeatOptions, validate_strings=True),
-        default=RepeatOptions.NEVER,
+        db.Enum(RepeatOption, validate_strings=True),
+        default=RepeatOption.NEVER,
         nullable=False
     )
     repeat_num = db.Column(db.Integer, default=0, nullable=False)
@@ -91,7 +92,7 @@ class RepeatTimeSlot(SurrogatePK, Model):
     )
 
     def get_start_at(self):
-        if self.repeat_option == RepeatOptions.SPECIFIC:
+        if self.repeat_option == RepeatOption.SPECIFIC:
             assert self.repeat_at is not None, (
                 'repeat_at needs to be set'
                 'for repeat_option == SPECIFIC'
@@ -111,8 +112,8 @@ def auto_set_start_at_for_repeat_time_slot(mapper, connection, target):
 class Schedule(SurrogatePK, Model):
     __tablename__ = 'schedule'
     repeat_option = db.Column(
-        db.Enum(RepeatOptions, validate_strings=True),
-        default=RepeatOptions.NEVER,
+        db.Enum(RepeatOption, validate_strings=True),
+        default=RepeatOption.NEVER,
         nullable=False
     )
     repeat_end_at = db.Column(db.DateTime)
@@ -121,7 +122,6 @@ class Schedule(SurrogatePK, Model):
         lazy='subquery',
         order_by=(TimeSlot.start_at)
     )
-    # repeat_time_slots include those for base_time_slots
     repeat_time_slots = db.relationship(
         'RepeatTimeSlot',
         lazy='subquery',
@@ -133,9 +133,9 @@ class Schedule(SurrogatePK, Model):
         return len(self.repeat_time_slots)
 
     def get_repeat_time_slots(self):
-        if self.repeat_option == RepeatOptions.SPECIFIC:
+        if self.repeat_option == RepeatOption.SPECIFIC:
             return self.repeat_time_slots
-        elif self.repeat_option == RepeatOptions.NEVER:
+        elif self.repeat_option == RepeatOption.NEVER:
             return [RepeatTimeSlot(base_time_slot=ts,
                                    repeat_num=0,
                                    repeat_option=self.repeat_option)
@@ -167,6 +167,32 @@ class Schedule(SurrogatePK, Model):
             base_slots = new_base_slots
 
         return all_rep_slots
+
+    def get_all_time_slots(self):
+        if self.repeat_option == RepeatOption.SPECIFIC:
+            return [self.base_time_slots[0]] + self.repeat_time_slots
+        elif self.repeat_option == RepeatOption.NEVER:
+            return self.base_time_slots
+        elif self.repeat_end_at is None:
+            return None
+
+        all_time_slots = []
+        base_slots = self.base_time_slots
+        while len(base_slots) > 0:
+            new_base_slots = []
+            for base_time_slot in base_slots:
+                if base_time_slot.start_at > self.repeat_end_at:
+                    break
+                all_time_slots.append(base_time_slot)
+                new_start_at = self.repeat_option.get_repeat_datetime(
+                    base_time_slot.start_at, num=1)
+                base_time_slot = TimeSlot(start_at=new_start_at,
+                                          duration=base_time_slot.duration)
+                new_base_slots.append(base_time_slot)
+            base_slots = new_base_slots
+
+        return all_time_slots
+
 
 
 # @event.listens_for(Schedule, 'before_insert')
