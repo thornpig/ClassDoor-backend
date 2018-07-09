@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime
 import json
 from app_test import APPTestCase
+from app.utils import print_json
 from app import create_app, db
 from app.config import TestConfig
 from app.models import (
@@ -17,9 +18,6 @@ from app.api.v1 import (
 )
 
 
-def print_json(json_data):
-    print(json.dumps(json.loads(json_data), sort_keys=True,
-                     indent=4, separators=(',', ': ')))
 
 
 class APITestCase(APPTestCase):
@@ -83,7 +81,7 @@ class APITestCase(APPTestCase):
 
     def test_user(self):
         rp = self.test_client.get('/api/v1/users/1')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/users',
@@ -92,7 +90,7 @@ class APITestCase(APPTestCase):
                             first_name='pig', last_name='pig')),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/users/1',
@@ -105,19 +103,19 @@ class APITestCase(APPTestCase):
             content_type='application/json',
 
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/persons/1,2,3,4,5')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/dependents/3,4')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/users/1,2,5')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/persons/1')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/dependents',
@@ -125,7 +123,7 @@ class APITestCase(APPTestCase):
                 dependency_id=5, first_name='lulu', last_name='gaga')),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
     def test_address(self):
         with self.app.app_context():
@@ -141,7 +139,7 @@ class APITestCase(APPTestCase):
             db.session.commit()
 
         rp = self.test_client.get('/api/v1/addresses/1')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/addresses',
@@ -157,7 +155,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/addresses',
@@ -173,7 +171,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/addresses/2',
@@ -186,7 +184,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         
     def test_schedule(self):
@@ -203,10 +201,10 @@ class APITestCase(APPTestCase):
             db.session.commit()
 
         rp = self.test_client.get('/api/v1/timeslots/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/schedules/1')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         ts2_dict = dict(
             start_at=datetime(2018, 12, 27, 11, 59, 59).isoformat(),
@@ -227,7 +225,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         end_at_str = datetime(2019, 2, 20, 9, 59, 59).isoformat()
         rp = self.test_client.patch(
@@ -241,7 +239,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
 
     def test_organization(self):
@@ -269,11 +267,11 @@ class APITestCase(APPTestCase):
             db.session.commit()
 
         rp = self.test_client.get('/api/v1/organizations/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get(
             '/api/v1/org-per-assns/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         with self.app.app_context():
             u1 = User(username='pig', email='pig@gmail.com',
@@ -292,7 +290,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/org-per-assns/4',
@@ -303,7 +301,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/organizations',
@@ -315,7 +313,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/organizations/3',
@@ -326,7 +324,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
     def test_notification(self):
         with self.app.app_context():
@@ -349,7 +347,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/notifications',
@@ -361,10 +359,10 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/notifications/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/notif-deliveries',
@@ -376,7 +374,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/notif-deliveries',
@@ -388,13 +386,13 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/notif-deliveries/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/persons/3')
-        print_json(rp.data)
+        # print_json(rp.data)
 
 
     def test_class(self):
@@ -453,11 +451,11 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
 
         rp = self.test_client.get('/api/v1/classes/1')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/classes/1',
@@ -475,7 +473,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/class-sessions',
@@ -488,7 +486,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         ts2_dict = dict(
             start_at=datetime(2018, 12, 27, 11, 59, 59).isoformat(),
@@ -509,7 +507,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/class-sessions/1',
@@ -522,7 +520,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
 
     def test_lesson(self):
@@ -536,7 +534,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         #  with self.app.app_context():
         #      lessons = self.db.session.query(
@@ -544,7 +542,7 @@ class APITestCase(APPTestCase):
         #      print(lessons)
 
         rp = self.test_client.get('/api/v1/class-sessions/1/lessons')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/template-lessons/1',
@@ -556,10 +554,10 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/class-sessions/1/lessons')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         with self.app.app_context():
             tl = self.db.session.query(TemplateLesson).get(1)
@@ -567,8 +565,7 @@ class APITestCase(APPTestCase):
             self.db.session.add(tl)
             self.db.session.commit()
         rp = self.test_client.get('/api/v1/class-sessions/1/lessons')
-        print_json(rp.data)
-        exit()
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/lessons',
@@ -581,7 +578,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/lessons/1',
@@ -595,7 +592,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/repeated-lessons',
@@ -608,7 +605,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/repeated-lessons/2',
@@ -622,13 +619,13 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/class-sessions/1')
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/lessons/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
 
 
@@ -645,7 +642,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.patch(
             '/api/v1/enrollments/1',
@@ -659,7 +656,7 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.post(
             '/api/v1/enrollments',
@@ -672,10 +669,10 @@ class APITestCase(APPTestCase):
             ),
             content_type='application/json',
         )
-        print_json(rp.data)
+        # print_json(rp.data)
 
         rp = self.test_client.get('/api/v1/enrollments/1,2')
-        print_json(rp.data)
+        # print_json(rp.data)
 
 
 if __name__ == '__main__':
