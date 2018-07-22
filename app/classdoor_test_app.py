@@ -1,3 +1,4 @@
+from flask import request_finished
 from app import create_app, db
 from app.models import Person, User, Dependent, Class, Address
 from app.config import TestConfig
@@ -11,6 +12,9 @@ with app.app_context():
 def sqlalchemy_session_cleanup(exception=None):
     if exception:
         db.session.rollback()
+
+
+
 
 
 @app.shell_context_processor

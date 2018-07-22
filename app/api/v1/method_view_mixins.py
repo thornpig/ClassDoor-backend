@@ -110,6 +110,7 @@ class BaseMethodViewMixin(object):
 
         items = self.get_resource_with_keyvalue_dict(item_class, kv_dict,
                                                      unique)
+        items = [items] if unique else items
         schema_callable = schema_or_callable
         if not callable(schema_or_callable):
             schema_callable = (lambda obj: schema_or_callable)

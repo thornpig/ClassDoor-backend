@@ -1,7 +1,7 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import (APIConst, Organization, OrganizationPersonAssociation,
@@ -28,7 +28,7 @@ class OrganizationPersonSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     terminated = fields.Boolean()
     organization = fields.Nested(
         'OrganizationSchema',
-        only=['id', '_type', 'name'],
+        only=['id', '_type', 'name', 'creator_id'],
         dump_only=True,
     )
     associated_person = fields.Nested(
@@ -80,7 +80,6 @@ organization_patch_schema = OrganizationSchema(
     partial=True
 )
 
-
 class OrganizationPersonResource(BaseMethodViewMixin, MethodView):
     def get(self, id):
         return self.response_to_get_with_ids(
@@ -100,11 +99,11 @@ class OrganizationPersonResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = orgper_schema.dump(
             OrganizationPersonAssociation.get_with_id(orgper.id))
-        return jsonify(
-            {APIConst.MESSAGE: 'updated organization person association {}'.
-             format(id),
-             APIConst.DATA: result}
-        )
+        response = jsonify({
+            APIConst.MESSAGE:
+            'updated organization person association {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class OrganizationPersonCollectionResource(BaseMethodViewMixin, MethodView):
@@ -124,9 +123,10 @@ class OrganizationPersonCollectionResource(BaseMethodViewMixin, MethodView):
 
         orgper = OrganizationPersonAssociation.create(**data)
         result = orgper_schema.dump(orgper)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new organization',
              APIConst.DATA: result})
+        return response
 
 
 class OrganizationResource(BaseMethodViewMixin, MethodView):
@@ -148,8 +148,10 @@ class OrganizationResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = organization_schema.dump(
             Organization.get_with_id(organization.id))
-        return jsonify({APIConst.MESSAGE: 'updated organization {}'.format(id),
-                        APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'updated organization {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class OrganizationCollectionResource(BaseMethodViewMixin, MethodView):
@@ -169,9 +171,11 @@ class OrganizationCollectionResource(BaseMethodViewMixin, MethodView):
 
         organization = Organization.create(**data)
         result = organization_schema.dump(organization)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new organization',
              APIConst.DATA: result})
+        return response
+
 
 
 orgper_view = OrganizationPersonResource.as_view('orgper_api')

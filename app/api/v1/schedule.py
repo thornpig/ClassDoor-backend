@@ -1,7 +1,7 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import APIConst, TimeSlot, Schedule
@@ -86,8 +86,10 @@ class TimeSlotResource(BaseMethodViewMixin, MethodView):
             raise RequestException(
                 payload={APIConst.INPUT: json_data}) from err
         result = timeslot_schema.dump(TimeSlot.get_with_id(timeslot.id))
-        return jsonify({APIConst.MESSAGE: 'updated timeslot {}'.format(id),
-                        APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'updated timeslot {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class TimeSlotCollectionResource(BaseMethodViewMixin, MethodView):
@@ -105,9 +107,10 @@ class TimeSlotCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         timeslot = TimeSlot.create(**data)
         result = timeslot_schema.dump(timeslot)
-        return jsonify(
-            {APIConst.MESSAGE: 'created new timeslot',
-             APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'created new timeslot',
+            APIConst.DATA: result})
+        return response
 
 
 class ScheduleResource(BaseMethodViewMixin, MethodView):
@@ -128,8 +131,10 @@ class ScheduleResource(BaseMethodViewMixin, MethodView):
             raise RequestException(
                 payload={APIConst.INPUT: json_data}) from err
         result = schedule_schema.dump(Schedule.get_with_id(schedule.id))
-        return jsonify({APIConst.MESSAGE: 'updated schedule {}'.format(id),
-                        APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'updated schedule {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class ScheduleCollectionResource(BaseMethodViewMixin, MethodView):
@@ -148,9 +153,10 @@ class ScheduleCollectionResource(BaseMethodViewMixin, MethodView):
 
         schedule = Schedule.create(**data)
         result = schedule_schema.dump(schedule)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new schedule',
              APIConst.DATA: result})
+        return response
 
 
 timeslot_view = TimeSlotResource.as_view('timeslot_api')

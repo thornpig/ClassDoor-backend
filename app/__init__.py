@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, request_finished
 from .config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.routing import BaseConverter, Rule, Map
+
 
 
 db = SQLAlchemy()
@@ -16,6 +17,7 @@ def create_app(config_class=Config):
     register_url_converters(app)
     register_blueprints(app)
     register_error_handlers(app)
+    configure_logging(app)
     return app
 
 
@@ -43,6 +45,16 @@ def register_url_converters(app):
     # before the blueprint registers the url rules!
     from .api.url_converters import IntListConverter
     app.url_map.converters['int_list'] = IntListConverter
+
+
+def configure_logging(app):
+    from app.utils import print_json
+    if app.config['DEBUG']:
+        @app.after_request
+        def log_response(response):
+            print_json(response.data)
+            return response
+
 
 
 from .models import (address, user, enrollment,

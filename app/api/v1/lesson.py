@@ -1,7 +1,7 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import (APIConst, Lesson, RepeatedLesson, Address, TimeSlot,
@@ -29,7 +29,8 @@ class TemplateLessonSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     location = fields.Nested('AddressSchema')
     class_session = fields.Nested(
         'ClassSessionSchema',
-        only=['id', '_type', 'class_id', 'template_lessons'],
+        only=['id', '_type', 'class_id', 'creator_id',
+              'schedule_id'],
         dump_only=True)
 
     @validates_schema
@@ -45,8 +46,8 @@ class TemplateLessonSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
 class LessonSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     __model__ = Lesson
     class_session_id = fields.Integer(required=True)
-    start_at = fields.DateTime(required=True)
-    duration = fields.Integer(required=True, validate=validate.Range(min=0))
+    start_at = fields.DateTime()
+    duration = fields.Integer(validate=validate.Range(min=0))
     location_id = fields.Integer(validate=validate.Range(min=1))
     instructors = fields.Nested(
         'PersonSchema',
@@ -96,7 +97,7 @@ class RepeatedLessonSchema(LessonSchema):
     )
     template_lesson = fields.Nested(
         TemplateLessonSchema,
-        only=['id', '_type', 'time_slot', 'location'],
+        only=['id', '_type', 'time_slot', 'location', 'class_session_id'],
         dump_only=True,
     )
 
@@ -141,8 +142,10 @@ class TemplateLessonResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = template_lesson_schema.dump(TemplateLesson.get_with_id(
             template_lesson.id))
-        return jsonify({APIConst.MESSAGE: 'updated template lesson {}'.format(
-            id), APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'updated template lesson {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class TemplateLessonCollectionResource(BaseMethodViewMixin, MethodView):
@@ -161,9 +164,10 @@ class TemplateLessonCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         template_lesson = TemplateLesson.create(**data)
         result = template_lesson_schema.dump(template_lesson)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new template lesson',
              APIConst.DATA: result})
+        return response
 
 
 class LessonResource(BaseMethodViewMixin, MethodView):
@@ -185,8 +189,9 @@ class LessonResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = lesson_schema.dump(Lesson.get_with_id(
             lesson.id))
-        return jsonify({APIConst.MESSAGE: 'updated lesson {}'.format(
+        response = jsonify({APIConst.MESSAGE: 'updated lesson {}'.format(
             id), APIConst.DATA: result})
+        return response
 
 
 class LessonCollectionResource(BaseMethodViewMixin, MethodView):
@@ -213,9 +218,10 @@ class LessonCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         lesson = Lesson.create(**data)
         result = lesson_schema.dump(lesson)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new lesson',
              APIConst.DATA: result})
+        return response
 
 
 class RepeatedLessonResource(BaseMethodViewMixin, MethodView):
@@ -237,8 +243,10 @@ class RepeatedLessonResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = repeated_lesson_schema.dump(RepeatedLesson.get_with_id(
             repeated_lesson.id))
-        return jsonify({APIConst.MESSAGE: 'updated repeated lesson {}'.format(
-            id), APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'updated repeated lesson {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class RepeatedLessonCollectionResource(BaseMethodViewMixin, MethodView):
@@ -257,9 +265,10 @@ class RepeatedLessonCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         repeated_lesson = RepeatedLesson.create(**data)
         result = repeated_lesson_schema.dump(repeated_lesson)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new repeated lesson',
              APIConst.DATA: result})
+        return response
 
 
 template_lesson_view = TemplateLessonResource.as_view('template_lesson_api')

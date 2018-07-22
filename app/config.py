@@ -15,6 +15,7 @@ class Config(object):
 
 
 class TestConfig(object):
+    DEBUG = True
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
 
     SQLALCHEMY_DATABASE_URI = 'sqlite://'

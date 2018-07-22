@@ -1,6 +1,6 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors import RequestException
 from app.models import APIConst, User, Person, Dependent
@@ -17,13 +17,14 @@ class PersonSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
         min=1, max=30))
     organization_person_associations = fields.Nested(
         'OrganizationPersonSchema',
-        only=['id', '_type', 'organization_id', 'terminated'],
+        only=['id', '_type', 'organization_id', 'associated_person_id',
+              "initiator_id", 'terminated'],
         many=True,
         dump_only=True,
     )
     notification_deliveries = fields.Nested(
         'NotificationDeliverySchema',
-        only=['id', '_type', 'delivered_at', 'notification_id'],
+        only=['id', '_type', 'delivered_at', 'notification_id', 'receiver_id'],
         many=True,
         dump_only=True,
     )
@@ -36,6 +37,13 @@ class PersonSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     visiting_lessons = fields.Nested(
         'LessonSchema',
         only=['id', '_type', 'class_session_id'],
+        many=True,
+        dump_only=True,
+    )
+    enrollments = fields.Nested(
+        'EnrollmentSchema',
+        only=['id', '_type', 'enrolled_person_id', 'initiator_id',
+              'terminated', 'class_session_id'],
         many=True,
         dump_only=True,
     )
@@ -72,19 +80,20 @@ class UserSchema(PersonSchema):
     email = fields.String(required=True, validate=validate.Email())
     dependents = fields.Nested(
         DependentSchema,
-        only=['id', '_type', 'first_name', 'last_name'],
+        only=['id', '_type', 'first_name', 'last_name', 'dependency_id'],
         many=True,
         dump_only=True,
     )
     created_classes = fields.Nested(
         'ClassSchema',
-        only=['id', '_type', 'title'],
+        only=['id', '_type', 'title', 'duration', 'description', 'creator_id',
+              'num_of_lessons_per_session', 'capacity'],
         many=True,
         dump_only=True,
     )
     created_organizations = fields.Nested(
         'OrganizationSchema',
-        only=['id', '_type', 'name'],
+        only=['id', '_type', 'name', 'creator_id'],
         many=True,
         dump_only=True,
     )
@@ -150,8 +159,10 @@ class DependentResource(BaseMethodViewMixin, MethodView):
             raise RequestException(
                 payload={APIConst.INPUT: json_data}) from err
         result = dependent_schema.dump(Dependent.get_with_id(dependent.id))
-        return jsonify({APIConst.MESSAGE: 'updated dependent {}'.format(id),
-                        APIConst.DATA: result})
+        response = jsonify({
+            APIConst.MESSAGE: 'updated dependent {}'.format(id),
+            APIConst.DATA: result})
+        return response
 
 
 class DependentCollectionResource(BaseMethodViewMixin, MethodView):
@@ -169,8 +180,9 @@ class DependentCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         dependent = Dependent.create(**data)
         result = dependent_schema.dump(dependent)
-        return jsonify({APIConst.MESSAGE: 'created new dependent',
-                        APIConst.DATA: result})
+        response = jsonify({APIConst.MESSAGE: 'created new dependent',
+                            APIConst.DATA: result})
+        return response
 
 
 class UserResource(BaseMethodViewMixin, MethodView):
@@ -201,8 +213,9 @@ class UserResource(BaseMethodViewMixin, MethodView):
             raise RequestException(
                 payload={APIConst.INPUT: json_data}) from err
         result = user_schema.dump(User.get_with_id(user.id))
-        return jsonify({APIConst.MESSAGE: 'updated user',
-                        APIConst.DATA: result})
+        response = jsonify({APIConst.MESSAGE: 'updated user',
+                            APIConst.DATA: result})
+        return response
 
     def delete(self, id=None, username=None):
         user = None
@@ -217,9 +230,10 @@ class UserResource(BaseMethodViewMixin, MethodView):
         except Exception as err:
             raise RequestException("User {} could not be deleted".format(
                 user.username), 500)
-        return jsonify(
-                {APIConst.MESSAGE: "User {} has been deleted.".format(
-                    user.username)}), 200
+        response = jsonify({
+            APIConst.MESSAGE:
+            "User {} has been deleted.".format(user.username)}), 200
+        return response
 
 
 class UserCollectionResource(BaseMethodViewMixin, MethodView):
@@ -234,6 +248,7 @@ class UserCollectionResource(BaseMethodViewMixin, MethodView):
             data = user_schema.load(json_data)
         except ValidationError as err:
             raise RequestException("Invalid input data", 400, err.messages)
+        print(data)
         username = data['username']
         if User.get_with_username(username) is not None:
             raise RequestException("username '{}' has been taken".format(
@@ -241,8 +256,10 @@ class UserCollectionResource(BaseMethodViewMixin, MethodView):
         else:
             User.create(**data)
             result = user_schema.dump(User.get_with_username(username))
-            return jsonify({APIConst.MESSAGE: 'created new user',
-                            APIConst.DATA: result})
+            response = jsonify({
+                APIConst.MESSAGE: 'created new user',
+                APIConst.DATA: result})
+            return response
 
 
 person_view = PersonResource.as_view('person_api')

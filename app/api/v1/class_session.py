@@ -1,7 +1,7 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import (APIConst, Class, ClassSession, Address, User,
@@ -34,13 +34,13 @@ class ClassSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
                               many=True, partial=True)
     sessions = fields.Nested(
         'ClassSessionSchema',
-        only=['id', '_type', 'schedule_id'],
+        only=['id', '_type', 'schedule_id', 'class_id', 'creator_id'],
         many=True,
         dump_only=True,
     )
     organization = fields.Nested(
         'OrganizationSchema',
-        only=['id', '_type', 'name'],
+        only=['id', '_type', 'name', 'creator_id'],
         dump_only=True,
     )
     creator = fields.Nested(
@@ -89,7 +89,7 @@ class ClassSessionSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     capacity = fields.Integer(validate=validate.Range(min=1))
     template_lessons = fields.Nested(
         'TemplateLessonSchema',
-        only=['id', '_type', 'time_slot'],
+        only=['id', '_type', 'time_slot', 'class_session_id'],
         many=True,
         dump_only=True,
     )
@@ -105,7 +105,7 @@ class ClassSessionSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     enrollments = fields.Nested(
         'EnrollmentSchema',
         only=['id', '_type', 'enrolled_person_id', 'initiator_id',
-              'terminated'],
+              'terminated', 'class_session_id'],
         many=True,
         dump_only=True,
     )
@@ -154,8 +154,10 @@ class ClassResource(BaseMethodViewMixin, MethodView):
             raise RequestException(
                 payload={APIConst.INPUT: json_data}) from err
         result = class_schema.dump(Class.get_with_id(_class.id))
-        return jsonify({APIConst.MESSAGE: 'updated class {}'.format(id),
-                        APIConst.DATA: result})
+        response = jsonify({APIConst.MESSAGE: 'updated class {}'.format(id),
+                            APIConst.DATA: result})
+        
+        return response
 
 
 class ClassCollectionResource(BaseMethodViewMixin, MethodView):
@@ -173,9 +175,11 @@ class ClassCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         _class = Class.create(**data)
         result = class_schema.dump(_class)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new class',
              APIConst.DATA: result})
+        
+        return response
 
 
 class ClassSessionResource(BaseMethodViewMixin, MethodView):
@@ -197,8 +201,10 @@ class ClassSessionResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = class_session_schema.dump(ClassSession.get_with_id(
             class_session.id))
-        return jsonify({APIConst.MESSAGE: 'updated class session {}'.format(
+        response = jsonify({APIConst.MESSAGE: 'updated class session {}'.format(
             id), APIConst.DATA: result})
+        
+        return response
 
 
 class ClassSessionCollectionResource(BaseMethodViewMixin, MethodView):
@@ -217,9 +223,11 @@ class ClassSessionCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         class_session = ClassSession.create(**data)
         result = class_session_schema.dump(class_session)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new class session',
              APIConst.DATA: result})
+        
+        return response
 
 
 class_view = ClassResource.as_view('class_api')

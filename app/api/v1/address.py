@@ -1,7 +1,7 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import APIConst, Address, User
@@ -65,8 +65,10 @@ class AddressResource(BaseMethodViewMixin, MethodView):
             raise RequestException(
                 payload={APIConst.INPUT: json_data}) from err
         result = address_schema.dump(Address.get_with_id(address.id))
-        return jsonify({APIConst.MESSAGE: 'updated address {}'.format(id),
-                        APIConst.DATA: result})
+        response = jsonify({APIConst.MESSAGE: 'updated address {}'.format(
+            id), APIConst.DATA: result})
+        
+        return response
 
 
 class AddressCollectionResource(BaseMethodViewMixin, MethodView):
@@ -84,8 +86,10 @@ class AddressCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         address = Address.create(**data)
         result = address_schema.dump(address)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new address', APIConst.DATA: result})
+        
+        return response
 
 
 address_view = AddressResource.as_view('address_api')

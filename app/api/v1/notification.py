@@ -1,7 +1,7 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import (APIConst, Person, User, Notification,
@@ -48,7 +48,7 @@ class NotificationSchema(BaseSchemaMixin, TimestampSchemaMixin, Schema):
     sender_id = fields.Integer(required=True, validate=validate.Range(min=1))
     deliveries = fields.Nested(
         NotificationDeliverySchema,
-        only=['id', '_type', 'receiver_id', 'delivered_at'],
+        only=['id', '_type', 'notification_id', 'receiver_id', 'delivered_at'],
         many=True,
         dump_only=True,
     )
@@ -92,9 +92,10 @@ class NotifDeliveryCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         delivery = NotificationDelivery.create(**data)
         result = notif_delivery_schema.dump(delivery)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new notification delivery',
              APIConst.DATA: result})
+        return response
 
 
 class NotificationResource(BaseMethodViewMixin, MethodView):
@@ -119,9 +120,10 @@ class NotificationCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         notification = Notification.create(**data)
         result = notification_schema.dump(notification)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new notification',
              APIConst.DATA: result})
+        return response
 
 
 notif_delivery_view = NotifDeliveryResource.as_view(

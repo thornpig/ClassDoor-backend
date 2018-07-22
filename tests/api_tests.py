@@ -83,6 +83,8 @@ class APITestCase(APPTestCase):
         rp = self.test_client.get('/api/v1/users/1')
         # print_json(rp.data)
 
+        rp = self.test_client.get('/api/v1/users/thornpig')
+
         rp = self.test_client.post(
             '/api/v1/users',
             data=json.dumps(dict(username='pig',

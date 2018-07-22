@@ -48,7 +48,6 @@ class Person(SurrogatePK, TimestampMixin, Model):
                                  self.first_name, self.last_name)
 
 
-
 class User(Person):
     __tablename__ = 'user'
     id = db.Column(db.ForeignKey('person.id'), primary_key=True)

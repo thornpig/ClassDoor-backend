@@ -1,6 +1,6 @@
 from flask import request, g, abort, jsonify
 from flask.views import MethodView
-from marshmallow import (Schema, fields, validate, ValidationError, pprint,
+from marshmallow import (Schema, fields, validate, ValidationError,
                          validates_schema)
 from app.errors.request_exception import RequestException
 from app.models import (APIConst, Enrollment, Person, User, ClassSession)
@@ -77,8 +77,10 @@ class EnrollmentResource(BaseMethodViewMixin, MethodView):
                 payload={APIConst.INPUT: json_data}) from err
         result = enrollment_schema.dump(Enrollment.get_with_id(
             enrollment.id))
-        return jsonify({APIConst.MESSAGE: 'updated enrollment {}'.format(
+        response = jsonify({APIConst.MESSAGE: 'updated enrollment {}'.format(
             id), APIConst.DATA: result})
+        
+        return response
 
 
 class EnrollmentCollectionResource(BaseMethodViewMixin, MethodView):
@@ -96,9 +98,11 @@ class EnrollmentCollectionResource(BaseMethodViewMixin, MethodView):
             raise RequestException("Invalid input data", 400, err.messages)
         enrollment = Enrollment.create(**data)
         result = enrollment_schema.dump(enrollment)
-        return jsonify(
+        response = jsonify(
             {APIConst.MESSAGE: 'created new enrollment',
              APIConst.DATA: result})
+        
+        return response
 
 
 enrollment_view = EnrollmentResource.as_view('enrollment_api')
